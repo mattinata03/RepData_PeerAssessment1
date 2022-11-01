@@ -1,8 +1,8 @@
 ---
 title: 'Reproducible Research: Peer Assessment 1'
 output:
-  html_document:
-    keep_md: true
+  html_document: 
+  keep_md: true
 ---
 
 ##### Submitted by Lisa Murray for the JHU Reproducible Research course
@@ -17,7 +17,7 @@ This document outlines the steps that were taken to load and analyze the data to
 
 ## Loading and Pre-Processing the Data
 
-Before the data are read into the working environment, we ensure that the following packages are loaded into the working directory:
+Before the data are read into the working environment, ensure that the following packages are loaded into the working directory:
 
 ```{r message = FALSE}
 library(ggplot2)
@@ -27,33 +27,43 @@ library(rmarkdown)
 library(scales)
 ```
 
-### a) Loading the Data
+### Loading the Data
 
-The data are stored in a comma-separated-value file, which has been archived/compressed into a zipped file. After ensuring that the raw data file **activity.zip** resides in the working directory, we uncompress the file (with the **unz()** function).
+The data are stored in a comma-separated-value (CSV) file, which has been archived/compressed into a zipped file. After ensuring that the raw data file **activity.zip** resides in the working directory, uncompress the file (with the **unz()** function).
 
-We then load the raw data into the work environment using the **read.csv()** function with header = TRUE. We call the output file **activityRAW**.
+- Load the raw data into the work environment using the **read.csv()** function with header = TRUE. The output dataset is called **activityRAW**.
 
 ```{r echo = TRUE}
 activityRAW <- read.csv(unz("activity.zip", "activity.csv"), header = TRUE)
 ```
 
-Once the data are loaded, we create a copy of the raw file to ensure the integrity of the raw data so it can be referred to, unchanged, during the process if needed. We call this file **activity**.
+Once the data are loaded, create a copy (**activity**) of the raw file to ensure the integrity of the raw data so it can be referred to, unchanged, during the process if needed.
 
 ```{r echo = TRUE}
 activity <- activityRAW
 ```
 
-### b) Pre-processing the Data
+### Pre-processing the Data
 
-After the **activity** dataset is created, we examine it to confirm the characteristics are the data are the same as the dataset information provided in the assignment.
+After the **activity** dataset is created, examine it to confirm the characteristics of the data match dataset information provided in the assignment.
 
--   To confirm there are a total of \*\*17,568 \*\*observations in the file, we run the **dim()** function to determine the number of rows of data.
+- Use the **head()** and **tail()** functions to get a first look at the beginning and end records of the dataset
+
+```{r echo = TRUE}
+head(activity)
+
+tail(activity)
+```
+
+-   Confirm there are a total of **17,568** observations in the file, by running the **dim()** function.
 
 ```{r echo = TRUE}
 dim(activity)
 ```
 
--   Using the **names()** and **str()** functions we confirm the heading names and the format of each field, per the dataset information provided:
+*The record count is correct.*
+
+-   Use the **names()** and **str()** functions to confirm that the heading names and field formats match the information provided:
 
     a\. **steps**: Number of steps taking in a 5-minute interval (*missing values are coded as NA*)
 
@@ -69,166 +79,204 @@ names(activity)
 str(activity)
 ```
 
-Now that we have confirmed that the data characteristics match what was expected. We note the following:
+*The field formats are as expected.* 
 
--   the **date** field is not in a date format, which is the format needed to do our analysis.
--   the **interval** field represent 5-minute intervals in 24-hour format
+Note the following:
 
-We make note of the **interval** field for reporting purposes, but must convert the **date** field by using the **as.Date.factor()** function. To confirm the conversion worked, again use the **str()** function.
+-   the **date** field is **not** in *date* format, which is the format needed to perform any date-related analysis
+-   the **interval** field represents 5-minute intervals in 24-hour format
+
+Pre-process the **date** field to modify format. There is no need to modify the **interval** field at this time.
+
+- Use the **as.Date.factor()** function to convert the format of the **date** field.
 
 ```{r echo = TRUE}
-
 activity$date <- as.Date.factor(activity$date)
 
+```
+
+- Confirm the conversion worked with the **str()** function.
+
+```{r echo = TRUE}
 str(activity)
 ```
 
-Now that the date field has been converted, we use the **summary()** function to get a cursory overview of values in the dataset.
+Now the date field is modified, get an overview of the data that are in the dataset.
+
+- Use the **summary()** function.
 
 ```{r echo = TRUE}
 summary(activity)
 ```
 
-The number of missing values (NA) in the **steps** field is **2304**. *NOTE: For initial analysis the dataset will contain missing data*
+NOTE: There are 2304 missing **steps** values (NA) dataset. *This will be addressed later in the analysis*
+
+There does not appear to be anything else that needs to be pre-processed at this time.
 
 ## Data Analysis
 
-### 1.0 What is the mean total number of steps taken per day?
+First, analyze the **activity** file to answer the following question.
 
-To determine the mean total number of steps taken per day, we perform the following:
+### What is the mean total number of steps taken per day?
 
-#### 1.1 Determine the number of steps taken per day
+To determine the mean total steps per day, perform the following steps:
 
-To calculate the total number of steps taken per day, we first aggregate the total number of steps per date into a file called **actStepsPD**.
+#### Determine the number of steps taken per day
+
+- Sum the total number of steps per day using **aggregate()** function. Create a new dataset  **actStepsPD**.  
 
 ```{r  echo = TRUE}
+# sum the number of steps per day
 actStepsPD <- aggregate(steps ~ date, activity, sum)
 
+# display a few records of the new dataset
+head (actStepsPD)
 ```
 
-We use the **head()** function to view a sample of the file.
+#### Create a histogram of the total number of steps taken each day
 
-```{r echo = TRUE}
-head(actStepsPD)
-
-```
-
-#### 1.2 Create a histogram of the total number of steps taken each day
+- Use the **ggplot()** function to create a histogram with the following code. In order to compare results using different versions of the data, create a *ylim* range to use in all subsequent. Since the data are by month, use a 0 to 30 limit.
 
 ```{r Figure_1, echo = TRUE}
 ggplot(actStepsPD, aes(x = steps)) +
-    geom_histogram(color = "black", fill = "lightblue",
-                   binwidth = 3000) +
-  scale_x_continuous("Total Daily Steps",label = comma) +
-  labs(title = "Total Steps per Day in October and November 2012", 
-       y = "Number of Days Step Totals Were Achieved",
-       caption = "Figure 1")
+        geom_histogram(color = "black", fill = "lightblue", binwidth = 3000) +
+        scale_x_continuous("Steps per Day", label = comma) +
+# set a y-axis limit for all histograms
+        ylim(0, 30) +
+        labs(title = "Steps per Day: Oct/Nov 2012",
+             subtitle = "Source: activity",
+             y = "Number of Days",
+             caption = "Figure 1",) +
+        theme(plot.title = element_text(hjust=0.5),
+              plot.subtitle = element_text(hjust=0.5),
+              plot.caption = element_text(hjust=0.5))
+
 ```
 
-#### 1.3 Calculate the mean of the total number of steps taken per day
+#### Calculate the mean of the total number of steps taken per day
 
-Using the **mean()** function we calculate the mean number of steps and save it as **actMean**.
+- Use the **mean()** function to calculate the mean number of steps and save it as **actMean** so it can be referred to in later analysis as needed.
 
 ```{r echo = TRUE}
 actMean <- mean(actStepsPD$steps)
 
+# display variable
+actMean
 ```
 
-The mean number of steps is `r actMean`.
+#### Calculate the median of the total number of steps taken per day.
 
-#### 1.4 Calculate the median of the total number of steps taken per day.
-
-Using the **median()** function we calculate the mean number of steps and save it as **actMedian**.
+- Use the **median()** function to calculate the median number of steps and save it as **actMedian**.
 
 ```{r echo = TRUE}
 actMedian <- median(actStepsPD$steps)
 
+# display variable
+actMedian
+
 ```
 
-The median number of steps is `r actMedian`.
+### What is the average daily activity pattern?
 
-### 2.0 What is the average daily activity pattern?
+#### Create a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
-#### 2.1 Create a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
-
-First we must aggregate the data by each 5-minute time interval of each day into a file called **actMeanPerInt**.
+- Aggregate the data by 5-minute time interval into a file called **actMeanPerInt**.
 
 ```{r echo = TRUE}
 actMeanPerInt <-
     aggregate(steps ~ interval, activity, mean)
 
-```
-
-Use the **head()** function to view a sample of the file.
-
-```{r echo = TRUE}
+# display records of file
 head(actMeanPerInt)
-
 ```
 
-Using this new aggregated data file as input, we can then create a time series plot.
+- Create a time series plot using the **actMeanPerInt** dataset.
 
 *Note: since the time in the file is in a 24-hour format, we pad the times before 1000 in the plot with leading zeroes for better ease of reading.*
 
 ```{r Figure_2, echo = TRUE}
 
-ggplot(data = actMeanPerInt,
-       aes(interval,steps)) +
-  geom_line() + 
-        labs(title = "Average Total Steps per 5-minute Daily Intervals",
-             subtitle = "24-Hour Time Format (e.g. 0500 = 5:00am)",
-             x = "Time of Day",
-             y ="Average Number of Steps",
-             caption = "Figure 2") +
-        scale_x_continuous(labels = function(x) 
-                stringr::str_pad(x, width = 4, pad = "0"))
-                
+ggplot(data = actMeanPerInt, aes(interval,steps)) +
+  geom_line() +
+        scale_x_continuous(labels = function(x)
+# pad the time with leading zeroes for ease of reading
+               stringr::str_pad(x, width = 4, pad = "0")) +
+# set a y-axis limit for all time series plots
+        ylim(0, 225) +
+        labs(title = "Average Steps per 5-min: Oct/Nov 2012",
+                subtitle = "Source: activity",
+                x = "Time of Day",
+                y ="Average Total Steps",
+                caption = "Figure 2") +
+        theme(plot.title = element_text(hjust=0.5),
+              plot.subtitle = element_text(hjust=0.5),
+              plot.caption = element_text(hjust=0.5))
+
 ```
 
-#### 2.2 Determine which 5 minute interval, on average across all the days in the dataset, contains the maximum number of steps.
+#### Determine which 5 minute interval, on average across all the days in the dataset, contains the maximum number of steps.
 
-To calculate this value, we use the **max()** function to find the maximum step count in the **actMeanPerInt** file. Then we will use the **subset()** function using the maximum step count to determine the record that has the maximum value. For ease of reading, the time interval is padded with zeroes if needed.
+- Find the maximum step count in the **actMeanPerInt** dataset. Use this value to find the record that has the max step count to determine the time at which it occurred.ded.
 
 ```{r echo = TRUE}
+# find the max step value
 actMaxPerInt <- max(actMeanPerInt$steps)
-# subset the meanStepsPerInt to find the interval that has the maximum steps 
-actMax5MinInt <- subset(actMeanPerInt, steps == actMaxPerInt)
-actMax5MinInt <- stringr::str_pad(actMax5MinInt$interval, width = 4, pad = "0")
+actMaxPerInt
 
+# find the record that has the max number of steps
+actMax5Min <- subset(actMeanPerInt, steps == actMaxPerInt)
+actMax5Min
+
+# pad the time with leading zeroes for ease of reading
+actMax5MinTime <- stringr::str_pad(actMax5Min$interval, width = 4, pad = "0")
+actMax5Min
 ```
 
-The maximum steps taken at any time (**actMaxPerInt**) which is `r actMaxPerInt`.
+Results:
+The maximum steps taken at any time (**actMaxPerInt**) is `r actMaxPerInt`.
 
-The 5-minute interval (**actMax5MinInt**) at which this is taken is `r actMax5MinInt`.
+The 5-minute interval (**actMax5MinTime**) at which these are is `r actMax5MinTime`.
 
-### 3.0 Imputing missing values
+### Imputing missing values
 
-#### 3.1 Confirm the number of missing values in the dataset.
+#### Confirm the number of missing values in the dataset.
 
-While pre-processing the data, we ran the **summary()** function and determined that there were 2304 instances of NA, or missing values, in the **steps** field in the raw data. We can verify this number by using the **sum()** function on the NA values in the **steps** field.
+As seen above, the **summary()** of **activity** showed that there are 2304 instances of NA, or missing values, in the **steps** field.
+
+- Verify the number of NA values in the **steps** field
 
 ```{r echo = TRUE}
 actNAcount <- sum(is.na(activity$steps))
 
+#display output
+actNAcount
 ```
 
-We confirm that there are `r actNAcount` empty records in the **steps** field.
+The number of missing values in the **steps** field is confirmed to be  `r actNAcount`.
 
-#### 3.2 Devise a strategy for filling in all of the missing values in the dataset
+#### Devise a strategy for filling in all of the missing values in the dataset
 
-We have calculated the mean steps per interval above and saved it into a file (**actMeanPerInt**). When the **steps** field in the raw data is empty for a specific time interval, we can substitute the field with the value for the same time interval in the **actMeanPerInt** file.
+For each missing value, replace it with the calculated mean number of steps for that time interval.
 
-If the **steps** field is not empty, it will not be modified.
+####  Create a new dataset equal to the original dataset but with the missing data filled in
 
-#### 3.3 Creating a new dataset equal to the original dataset but with the missing data filled in
-
-Using the **activity**, which has been pre-processed to correct the dates, we will use the **actMeanPerInt** file as a reference to get a value if **steps** is missing. To do this in R, we will use the **left_join()** function, to join the files by the **interval** value in both files.
-
-Then, using the **mutate()** function, we will modify the **step** value if and only if it is empty.
-
-We create a new output file **cl_activity**, using **c\_** to identify it as being "clean", i.e. having no missing data.
+- View records of **activity** file for a "before" view.
 
 ```{r echo = TRUE}
+
+head(activity)
+```
+
+Use the **actMeanPerInt** file as a reference to get a value if **steps** is missing in the **activity** file.
+
+- First, use the **left_join()** function to join the files by the **interval** field.
+
+- Then, use the **mutate()** function to modify the **step** value, if and only if it the field is missing data.
+
+ - Create a new output file **cl_activity**, using **cl_** to identify it as being "clean", i.e. having no missing data.
+
+```{r echo = TRUE}
+# create "clean" file by replacing empty step values with the calculated mean
 cl_activity <- left_join(activity, actMeanPerInt,
                       by = 'interval') %>%
     mutate(steps = ifelse(is.na(steps.x),
@@ -237,179 +285,164 @@ cl_activity <- left_join(activity, actMeanPerInt,
 
 ```
 
-To confirm that the data has been modified, we run the **sum()** function to confirm there are no NA values in the files.
+- View the output files
+
+```{r echo = TRUE}
+
+head(cl_activity)
+```
+
+- Run the **sum()** function to confirm there are no NA values in the files.
 
 ```{r echo = TRUE}
 cl_actNAcount <- sum(is.na(cl_activity$steps))
 
+cl_actNAcount
 ```
 
-We confirm that there are `r cl_actNAcount` empty records in the **steps** field.
+We confirm that there are `r cl_actNAcount` empty records in the **steps** field of the new file.
 
-We can also confirm the modifications by comparing the first few lines of both the **activity** and **cleanAct** files with the **head()** function. *NOTE: in the modified file the **steps** field is on the right*
+#### Create a histogram of the total number of steps taken each day
 
-```{r echo = TRUE}
-head(activity)
+Use the same process documented for the **activity** dataset.
 
-```
+##### Determine the number of steps taken per day
 
-```{r echo = TRUE}
-head(cl_activity)
+- Sum the total number of steps per day using **aggregate()** function. Create a new dataset  **actStepsPD**.  
 
-```
+```{r  echo = TRUE}
+# sum the number of steps per day
 
-#### 3.4 Create a histogram of the total number of steps taken each day
-
-We will use the same process documented above to create the histogram for the **cl_activity** data set.
-
-##### 3.4a Determine the number of steps taken per day
-
-```{r echo = TRUE}
 cl_actStepsPD <- aggregate(steps ~ date, cl_activity, sum)
 
+# display a few records of the new dataset
+head (cl_actStepsPD)
 ```
+##### Create the histogram
 
-We use the **head()** function to view a sample of the file.
-
-```{r echo = TRUE}
-head(cl_actStepsPD)
-
-```
-
-##### 3.4b Create the histogram
+- Use the **ggplot()** function to create a histogram with the following code. In order to compare results using different versions of the data, create a *ylim* range to use in all subsequent. Since the data are by month, use a 0 to 30 limit.
 
 ```{r Figure_3, echo = TRUE}
 ggplot(cl_actStepsPD, aes(x = steps)) +
-    geom_histogram(color = "black", fill = "lightblue",
-                   binwidth = 3000) +
-  scale_x_continuous("Total Daily Steps",label = comma) +
-  labs(title = "Total Steps per Day in October and November 2012",
-       y = "Number of Days Step Totals Were Achieved",
-       caption = "Figure 3")
+        geom_histogram(color = "black", fill = "lightblue", binwidth = 3000) +
+        scale_x_continuous("Steps per Day", label = comma) +
+# set a y-axis limit for all similar histograms
+        ylim(0, 30) +
+        labs(title = "Steps per Day: Oct/Nov 2012",
+             subtitle = "Source: cl_activity",
+             y = "Number of Days",
+             caption = "Figure 3",) +
+        theme(plot.title = element_text(hjust=0.5),
+              plot.subtitle = element_text(hjust=0.5),
+              plot.caption = element_text(hjust=0.5))
+
 ```
 
-#### 3.4c Calculate the mean of the total number of steps taken per day
+##### Calculate the mean of the total number of steps taken per day
 
-Using the **mean()** function we calculate the mean number of steps and save it as **actCleanMean**.
+- Use the **mean()** function to calculate the mean number of steps and save it as **cl_actMean** so it can be referred to in later analysis as needed.
 
 ```{r echo = TRUE}
 cl_actMean <- mean(cl_actStepsPD$steps)
 
+# display variable
+cl_actMean
 ```
 
-The mean number of steps is `r cl_actMean`.
+#### Calculate the median of the total number of steps taken per day.
 
-#### 3.4d Calculate the median of the total number of steps taken per day.
-
-Using the **median()** function we calculate the mean number of steps and save it as **actCleanMedian**.
+- Use the **median()** function to calculate the median number of steps and save it as **cl_actMedian** so it can be referred to in later analysis as needed.
 
 ```{r echo = TRUE}
 cl_actMedian <- median(cl_actStepsPD$steps)
 
+# display variable
+cl_actMedian
 ```
 
-The median number of steps is `r cl_actMedian`.
+#### Do these values different from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
-#### 3.4e Do these values different from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+- Comparing the histograms created from both the **activity** and **actClean** files, there is not a significant difference in the overall distribution/shape of the data, but, by adding the average number of steps per interval to the data increased the value of the number of days which the user walked the maximum number of steps.
 
-Comparing the histograms created from both the **activity** and **actClean** files, there is not a significant difference in the overall distribution/shape of the data, but, by adding the average number of steps per interval to the data increased the value of the number of days which the user walked the maximum number of steps.
-
-Comparing the mean values **NEED TO ADD TEXT HERE**
-
-Therefore, it does not appear that the missing data impacted the analysis regarding the number of steps taken.
-
-### 4.0 Are there differences in activity patterns between weekdays and weekends?
-
-**USE BOTH FILES** the data with the NA value replaced (**activityNoNA**), analyze the data to identify which data was captured on a weekend versus a weekday.
-
-#### 4.1 Results with **activity** files
-
-##### 4.1a Create a new factor variable in the dataset
-
-We create a new column of data, **day_type**, of type *factor*, with two levels - "weekday" and "weekend".
-
-Using the **activity** file, we use the **weekdays()** function to determine the day of the week. If the day is "Saturday" or "Sunday", we assign the value of weekend to **day_type**, else it will be "weekday".
+- Comparing the mean values of **activity** and **cl_activity:
 
 ```{r echo = TRUE}
+
+diffMean <- abs(actMean - cl_actMean)
+
+# display variable
+diffMean
+```
+
+The difference is `r diffMean` -- the mean has not changed.
+
+- Comparing the median values of **activity** and **cl_activity:
+
+```{r echo = TRUE}
+
+diffMedian <- abs(actMedian - cl_actMedian)
+
+# display variable
+diffMedian
+```
+
+The difference is `r diffMedian` -- which is not significant.
+
+Therefore, the difference made in the results when replacing the NA values was not significant. Thus, a more robust methodology for replacing the missing data is required.
+
+### Are there differences in activity patterns between weekdays and weekends?
+
+Since it has been determined above that there are no significant difference in the output after replacing the NA values, use the **activity** file for following analysis, since it more closely matches the raw data.
+
+#### Create a new factor variable in the dataset
+
+- Create a new column in the dataset, **day_type**, of type *factor*, with two levels - "weekday" and "weekend".
+
+- Use the **weekdays()** function to determine the day of the week. If the day is "Saturday" or "Sunday", assign the value of "weekend", else assign "weekday".
+
+```{r echo = TRUE}
+# create dow_type and populate
 activity$day_type <- ifelse(
         weekdays(activity$date) == c("Saturday", "Sunday"),
         "weekend", "weekday")
 
-head(activity, n = 10)
+# display sample of output
+head(activity)
 ```
 
-##### 4.1b Make a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
+#### Make a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
 
--   First aggregate the steps data by interval and dow_type. View a sample of the data.
+-   Aggregate the steps data by interval and day_type to create a new file **actMeanDayType**.
 
 ```{r echo = TRUE}
+# aggregate mean by interval and day_time
 actMeanDayType <-
         aggregate(steps ~ interval + day_type,
                   activity, mean)
 
-head(actMeanDayType, n = 10)
+# display sample of output
+head(actMeanDayType)
 ```
 
-Using the new **actMeanDayType** file, we will then create a panel plot to compare the weekend and weekday data.
+- Using the **actMeanDayType** file, create a panel plot to compare the weekend and weekday data.
 
 ```{r Figure_4, echo = TRUE}
-ggplot(data = actMeanDayType,
-       aes(x=interval, y= steps)) +
+ggplot(data = actMeanDayType, aes(x=interval, y= steps)) +
         facet_grid(day_type ~ .) +
         geom_line() +
-        labs(title = "Average Total Steps per 5-minute Daily Intervals",
-             subtitle = "24-Hour Time Format (e.g. 0500 = 5:00am)", 
+        scale_x_continuous(labels = function(x)
+# pad the time with leading zeroes for ease of reading
+                stringr::str_pad(x, width = 4, pad = "0")) +
+        ylim(0, 225) +
+        labs(title = "Average Steps per 5-minute Intervals",
+             subtitle = "Source: activity",
              x = "Time of Day",
              y ="Average Number of Steps",
              caption = "Figure 4") +
-        scale_x_continuous(labels = function(x) 
-                stringr::str_pad(x, width = 4, pad = "0"))
+        theme(plot.title = element_text(hjust=0.5),
+              plot.subtitle = element_text(hjust=0.5),
+              plot.caption = element_text(hjust=0.5))
+
 ```
 
-From this we can see that the, while the subject of this study moves around during the same time windows during both the weekdays and the weekend, the subject has a much higher activity level during the weekend.
-
-#### 4.2 Results with **cl_activity** file
-
-##### 4.2a Create a new factor variable in the dataset
-
-We create a new column of data, **day_type**, of type *factor*, with two levels - "weekday" and "weekend".
-
-Using the **cl_activity** file, we use the **weekdays()** function to determine the day of the week. If the day is "Saturday" or "Sunday", we assign the value of weekend to **day_type**, else it will be "weekday".
-
-```{r echo = TRUE}
-cl_activity$day_type <- ifelse(
-        weekdays(cl_activity$date) == c("Saturday", "Sunday"),
-        "weekend", "weekday")
-
-head(cl_activity, n = 10)
-```
-
-##### 4.2b Make a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
-
--   First aggregate the steps data by interval and dow_type. View a sample of the data.
-
-```{r echo = TRUE}
-cl_actMeanDayType <-
-        aggregate(steps ~ interval + day_type,
-                  cl_activity, mean)
-
-head(cl_actMeanDayType, n = 10)
-```
-
-Using the new **cl_actMeanDayType** file, we will then create a panel plot to compare the weekend and weekday data.
-
-```{r Figure_5, echo = TRUE}
-ggplot(data = cl_actMeanDayType,
-       aes(x=interval, y= steps)) +
-        facet_grid(day_type ~ .) +
-        geom_line() +
-        labs(title = "Average Total Steps per 5-minute Daily Intervals",
-             subtitle = "24-Hour Time Format (e.g. 0500 = 5:00am)", 
-             x = "Time of Day",
-             y ="Average Number of Steps",
-             caption = "Figure 5") +
-        scale_x_continuous(labels = function(x) 
-                stringr::str_pad(x, width = 4, pad = "0"))
-```
-
-From this we can see that the, while the subject of this study moves around during the same time windows during both the weekdays and the weekend, the subject has a much higher activity level during the weekend.
+Comparing the weekday and weekend data, it appears that the subject's near zero movement patterns tend to be similar throughout each day, which indicates that the subject gets up and goes to bed at relatively the same time each day. However, there is a significant increase in steps during the weekend, indicating that the subject is much more sedentary during the week. 
